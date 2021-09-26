@@ -11,15 +11,11 @@ class[[eosio::contract("freeossurvey")]] freeossurvey : public contract {
 public:
   using contract::contract;
 
-  /**
-   * version action.
-   *
-   * @details Prints the version of this contract.
-   */
   [[eosio::action]] void version();
 
-  [[eosio::action]]
-  void verify( name user );
+  [[eosio::action]] void verify( name user );
+
+  [[eosio::action]] void surveyinit();
 
     /**
      * action submit_user
@@ -90,7 +86,7 @@ void submituser( name user, bool r0,  bool r1,  bool r2,   // Question 1
   //This table will be abandoned after integration. TEST ONLY - Remove Later
   TABLE user_struct {
       name     user;
-      bool     isdone;   
+      bool     yesyoucan;   
       uint64_t timestamp; // not used
       uint32_t whatever;  // not used
       uint64_t primary_key() const {return user.value; }
@@ -121,14 +117,14 @@ void submituser( name user, bool r0,  bool r1,  bool r2,   // Question 1
   {
     user_list.emplace( get_self(), [&]( auto& row ){
     row.user = user;
-    row.isdone = true; // new user
+    row.yesyoucan = true; // new user
     });
     return true;
   }
   else 
   { 
     //Not modify - return the content
-    return idx->isdone;
+    return idx->yesyoucan; //whatever
   } 
 } //end
 
@@ -142,19 +138,36 @@ void done( name user ){
   }
   else 
   { //Mark user as done
-    user_list.modify(idx, get_self(), [&]( auto& row ) { row.isdone = false; });
+    user_list.modify(idx, get_self(), [&]( auto& row ) { row.yesyoucan = false; });
   }  
 } //end
 
 void clearmarker() { //TEST only
-    user_table user_list( get_self(), get_self().value ); 
-    auto   rec_itr  = user_list.begin();
-    while (rec_itr != user_list.end()) {
-           //rec_itr  = user_list.erase(rec_itr);
-           user_list.modify(rec_itr, get_self(), [&]( auto& row ) { row.isdone = true; });
-           rec_itr++;
-    }
+ //   user_table user_list( get_self(), get_self().value ); 
+ //   auto   rec_itr  = user_list.begin();
+ //   while (rec_itr != user_list.end()) {
+ //          //rec_itr  = user_list.erase(rec_itr);
+ //          user_list.modify(rec_itr, get_self(), [&]( auto& row ) { row.isdone = true; });
+ //          rec_itr++;
+ //   }
 } 
+
+void notify_front( uint8_t number ) 
+{
+  messages_table errortable( get_self(), get_self().value );                                  
+  auto ee = errortable.emplace( get_self(), [&](auto &e) {    
+    e.key = errortable.available_primary_key(); 
+    e.errorno = number;
+  } );                                                                                      
+} 
+//
+//---
 
 }; // end of public: contract ...  
 } //namespace end
+
+
+
+
+
+     
