@@ -13,8 +13,6 @@ public:
 
   [[eosio::action]] void version();
 
-  [[eosio::action]] void verify( name user );
-
   [[eosio::action]] void surveyinit();
 
     /**
@@ -30,15 +28,15 @@ public:
      * there is only one "current" session active. Anyway, user may vote/survey only once
      * during the current session.
      */
-[[eosio::action]]
+[[eosio::action]]  
 void submituser( name user, bool r0,  bool r1,  bool r2,   // Question 1
                             uint8_t r3,                    // Question 2 - slider
                             bool r4,  bool r5,  bool r6,   // Question 3  
                             uint8_t r7,                    // Question 4 - slider
                             bool r8,  bool r9,  bool r10,  // Question 5
                             bool r11, bool r12, bool r13, 
-                            bool r14, bool r15, bool r16, bool r17,
-                            bool r18, bool r19, bool r20); // Question 6
+                            bool r14, bool r15, bool r16); // Question 6
+
 
   // P R I V A T E //
 
@@ -141,27 +139,6 @@ void done( name user ){
     user_list.modify(idx, get_self(), [&]( auto& row ) { row.yesyoucan = false; });
   }  
 } //end
-
-void clearmarker() { //TEST only
- //   user_table user_list( get_self(), get_self().value ); 
- //   auto   rec_itr  = user_list.begin();
- //   while (rec_itr != user_list.end()) {
- //          //rec_itr  = user_list.erase(rec_itr);
- //          user_list.modify(rec_itr, get_self(), [&]( auto& row ) { row.isdone = true; });
- //          rec_itr++;
- //   }
-} 
-
-void notify_front( uint8_t number ) 
-{
-  messages_table errortable( get_self(), get_self().value );                                  
-  auto ee = errortable.emplace( get_self(), [&](auto &e) {    
-    e.key = errortable.available_primary_key(); 
-    e.errorno = number;
-  } );                                                                                      
-} 
-//
-//---
 
 }; // end of public: contract ...  
 } //namespace end

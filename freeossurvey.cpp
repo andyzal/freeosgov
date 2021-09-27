@@ -7,7 +7,7 @@ namespace freedao {
 using namespace eosio;
 using namespace std;
 
-const std::string VERSION = "0.0.20A";
+const std::string VERSION = "0.0.20";
 
 // ACTION
 void freeossurvey::version() {
@@ -15,14 +15,6 @@ void freeossurvey::version() {
 
   check(false, version_message);
 }
-
-// verify_user - request user verification. May be not necessary.
-// Actually duplicated by "is_eligible".
-[[eosio::action]]
-void freeossurvey::verify( name user){
-  // If returned true - surveyed or voting allowed.
-  // return true;
-} //end
 
 /**
  * Action surveyinit initialize new surveying period removing data of previous
@@ -38,7 +30,7 @@ globalres_table final_results(get_self(), get_self().value);
 
 // Note: All rows must be initialized to zero for all types of questions. 
 uint64_t pkey = 0;
-for(uint8_t i=0; i<21; i++) // eventually initialize or reset final_results table.
+for(uint8_t i=0; i<20; i++) // eventually initialize or reset final_results table.
 {
  auto idx = final_results.find( pkey ); 
     if( idx == final_results.end() )
@@ -58,15 +50,6 @@ for(uint8_t i=0; i<21; i++) // eventually initialize or reset final_results tabl
 } //end of for
 } // end of surveyinit
 
-//void freeossurvey::clearfront() {
-//    messages_table    errortable(get_self(), get_self().value);
-//    auto   rec_itr  = errortable.begin();
-//    while (rec_itr != errortable.end()) {
-//           rec_itr  = errortable.erase(rec_itr);
-//    }
-//} 
-
-
 [[eosio::action]]
 void freeossurvey::submituser( name user, bool r0,  bool r1,  bool r2,   // Question 1
                                 uint8_t r3,                    // Question 2 - slider
@@ -74,23 +57,16 @@ void freeossurvey::submituser( name user, bool r0,  bool r1,  bool r2,   // Ques
                                 uint8_t r7,                    // Question 4 - slider
                                 bool r8,  bool r9,  bool r10,  // Question 5
                                 bool r11, bool r12, bool r13, 
-                                bool r14, bool r15, bool r16, bool r17,
-                                bool r18, bool r19, bool r20) // Question 6
+                                bool r14, bool r15, bool r16)  // Question 6
 { 
  // require_auth( user ); // Uncomment for production TODO!
 
  // check( iterationzero(),     "Iteration zero encountered. EXITING!"); 
  // 
  // check( is_active( ),        "Survey not Active!" ); 
- // verify entry data - to consider 
 
  // Verify user eligibility - simulation
  // - Add user to the table if new:
- 
- // - Verify surveyed or not
-
-
- // - clean up/ prepare for new voting/survey 
  
 ///check( is_eligible( user ), "User already voted!" ); //Commented for test //TODO 
  
@@ -99,37 +75,85 @@ void freeossurvey::submituser( name user, bool r0,  bool r1,  bool r2,   // Ques
 // For example if first option of the first question will be selected the corresponding
 // r0 variable will be setup to true.
 // On Backend
-// If r0=true => results[0]++
+// If r0=true => final_results[0]++ (increment number of answers for this choice).
 
+/**
+ * In table "final_results": 
+ *    rows 0 - 2   Question One   (three options).
+ *    row  3       Question Two   (slider) - there is up to date average result.
+ *    rows 4  -  6 Question Three (three options).
+ *    row  7       Question Four  (slider) - there is up to date average result.
+ *    rows 8  - 13 Question Five  (six options).
+ *    rows 14 - 16 Question Six   (three options).
+ *    row  17      Number of users submitted surveys up to date.
+ *    row  18      Sum of all slider values for row 3 to count average.
+ *    row  19      Sum of all slider values for row 7 to count average.  
+*/  
+
+//Verify entry data (user submitted).
+uint8_t q1=0;
+if(r0){q1++;};
+if(r1){q1++;};
+if(r2){q1++;};
+check( q1==1, "First question not answered correctly");
+check( ((r3>0)&&(r3<=50)), "Second question out of range 1-50");
+q1=0;
+if(r4){q1++;};
+if(r5){q1++;};
+if(r6){q1++;};
+check( q1==1, "Third question not answered correctly");
+check( ((r7>0)&&(r7<=50)), "Fourth question out of range 1-50");
+q1=0;
+if(r8){q1++;};
+if(r9){q1++;};
+if(r10){q1++;};
+if(r11){q1++;};
+if(r12){q1++;};
+if(r13){q1++;};
+check( q1==3, "Fifth question not answered correctly");
+q1=0;
+if(r14){q1++;};
+if(r15){q1++;};
+if(r16){q1++;};
+check( q1==1, "Sixth question not answered correctly");
+
+//Add user's results to the global
 globalres_table final_results(get_self(), get_self().value);
 auto ite = final_results.begin(); 
-// Question 1: Select 2 of 3
+
+uint64_t p_key=17; //Add user to the counter at position 17 of final_results table.
+auto iter = final_results.find(p_key); {final_results.modify(iter, get_self(),[&](auto &p)
+  { p.gresult++; });};  
+uint32_t counter = iter->gresult;           // Duplicated final_results[17].
+//Total sum for sliders is going to final_results[18] and final_results[19] respectively:
+iter++; final_results.modify(iter, get_self(), [&](auto &p){p.gresult = p.gresult + r3;});
+uint32_t sum1 = iter->gresult;              // Duplicated final_results[18].
+iter++; final_results.modify(iter, get_self(), [&](auto &p){p.gresult = p.gresult + r7;});
+uint32_t sum2 = iter->gresult;              // Duplicated final_results[19].
+
+// Question 1: Select 1 of 3
 if(r0){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r1){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r2){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
-// Question 2: result between 0-50 
-if(r3>0){final_results.modify(ite, get_self(), [&](auto &p){p.gresult = p.gresult + r3;});} ite++;
-// Question 3: Select 2 of 3
+// Question 2: result between 0-50   //using r3
+{final_results.modify(ite, get_self(), [&](auto &p){p.gresult = sum1/counter;});} ite++;
+// Question 3: Select 1 of 3
 if(r4){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r5){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r6){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++; 
-// Question 4: result between 0-50   
-if(r7>0){final_results.modify(ite, get_self(), [&](auto &p){p.gresult = p.gresult + r7;});} ite++;
-// Question 5: Select 3 of 10
+// Question 4: result between 0-50   //using r7
+{final_results.modify(ite, get_self(),[&](auto &p){p.gresult = sum2/counter;});} ite++;
+// Question 5: Select 3 of 6
 if(r8 ){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r9 ){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r10){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r11){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r12){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r13){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
+// Question 6: Select 1 of 3 
 if(r14){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r15){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 if(r16){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
-if(r17){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
-// Question 6: Select 2 of 3 
-if(r18){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
-if(r19){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
-if(r20){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;
 //end
 
 ///done( user );
