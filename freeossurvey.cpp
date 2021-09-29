@@ -37,7 +37,7 @@ for(uint8_t i=0; i<20; i++) // eventually initialize or reset final_results tabl
     {
       final_results.emplace( get_self(), [&]( auto& row ){
         row.p_key = final_results.available_primary_key(); 
-        row.gresult = 0;
+        if(i==18){ row.gresult=1; } else row.gresult = 0;
       });
     }
     else 
@@ -124,12 +124,12 @@ auto ite = final_results.begin();
 uint64_t p_key=17; //Add user to the counter at position 17 of final_results table.
 auto iter = final_results.find(p_key); {final_results.modify(iter, get_self(),[&](auto &p)
   { p.gresult++; });};  
-uint32_t counter = iter->gresult;           // Duplicated final_results[17].
+double counter = iter->gresult;           // Duplicated final_results[17].
 //Total sum for sliders is going to final_results[18] and final_results[19] respectively:
 iter++; final_results.modify(iter, get_self(), [&](auto &p){p.gresult = p.gresult + r3;});
-uint32_t sum1 = iter->gresult;              // Duplicated final_results[18].
+double sum1 = iter->gresult;              // Duplicated final_results[18].
 iter++; final_results.modify(iter, get_self(), [&](auto &p){p.gresult = p.gresult + r7;});
-uint32_t sum2 = iter->gresult;              // Duplicated final_results[19].
+double sum2 = iter->gresult;              // Duplicated final_results[19].
 
 // Question 1: Select 1 of 3
 if(r0){final_results.modify(ite, get_self(),[&](auto &p){ p.gresult++; });} ite++;

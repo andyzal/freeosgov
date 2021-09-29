@@ -95,7 +95,7 @@ void submituser( name user, bool r0,  bool r1,  bool r2,   // Question 1
   // Table to count and keep survey global results for other modules
   TABLE globalres_struct {
   	  uint64_t p_key;
-  	  uint32_t gresult;
+  	  double gresult;
   	  uint64_t primary_key() const { return p_key; }
   };
   using globalres_table = eosio::multi_index<"globalres"_n, globalres_struct>;
